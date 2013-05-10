@@ -1,0 +1,118 @@
+#!/usr/bin/env python
+
+import pygtk
+pygtk.require('2.0')
+import gtk
+import datetime
+
+class TimerApp:
+
+    INTERVAL = 25 * 60
+
+    def __init__(self):
+        self.paused, self.active, self.stopped = False, False, True
+        self.create_window()        
+        self.wnd_main.add(self.create_main_panel())
+        self.wnd_main.show()
+
+    def create_window(self):
+        self.wnd_main = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        self.wnd_main.set_position(gtk.WIN_POS_CENTER_ALWAYS)
+        self.wnd_main.set_size_request(180, 25)
+        self.wnd_main.set_border_width(0)
+        self.wnd_main.set_title('Timer')
+        self.wnd_main.set_resizable(False)
+        self.wnd_main.connect('delete_event', self.delete_event)
+        self.wnd_main.connect('destroy', self.destroy)
+
+    def create_main_panel(self):
+        pnl_main = gtk.HBox(False, 0)
+        self.create_label(pnl_main)
+        self.create_buttons(pnl_main)
+        pnl_main.show()
+        return pnl_main
+
+    def create_label(self, pnl_main): 
+        self.lbl_timer = gtk.Label(self.format_time(self.INTERVAL))
+        self.lbl_timer.set_size_request(80, 25) 
+        pnl_main.add(self.lbl_timer)
+        self.lbl_timer.show()
+
+    def create_buttons(self, pnl_main):
+        self.btn_start = self.create_button(pnl_main, 'Start', self.start_timer)
+        self.btn_pause = self.create_button(pnl_main, 'Pause', self.pause_timer, False)
+        self.btn_reset = self.create_button(pnl_main, 'Reset', self.reset_timer)
+
+    def create_button(self, pnl_main, label, handler, show=True):
+        btn = gtk.Button(label)
+        btn.set_size_request(50, 25)
+        btn.connect('clicked', handler)
+        pnl_main.add(btn)
+        if show: btn.show()
+        return btn
+
+    def start_timer(self, widget):
+        self.btn_pause.show()
+        self.btn_start.hide()
+        if self.stopped: 
+            self.counter = self.INTERVAL - 1
+            self.lbl_timer.set_text(self.format_time(self.INTERVAL - 1))
+        if not self.active: 
+            self.timeout_id = gtk.timeout_add(1000, self.refresh_timer)
+        self.stopped, self.paused, self.active = False, False, True
+
+    def pause_timer(self, widget):
+        self.btn_start.show()
+        self.btn_pause.hide()
+        self.paused = True
+        self.active = False
+        gtk.timeout_remove(self.timeout_id)
+
+    def reset_timer(self, widget):
+        self.btn_start.show()
+        self.btn_pause.hide()
+        self.counter = self.INTERVAL
+        self.stopped, self.paused, self.active = True, False, False
+        gtk.timeout_remove(self.timeout_id)
+        self.lbl_timer.set_text(self.format_time(self.counter))
+
+    def refresh_timer(self):
+        if not self.active: return False
+        if self.counter:
+            self.counter -= 1
+            self.lbl_timer.set_text(self.format_time(self.counter))
+            return True
+        else:
+            self.finished();
+            self.reset_timer(None)
+            return False
+
+    def format_time(self, seconds):
+        hours = seconds // 3600
+        remaining_seconds = seconds % 3600
+        minutes = remaining_seconds // 60
+        seconds = remaining_seconds % 60
+        return datetime.time(hours, minutes, seconds).strftime('%H:%M:%S')
+
+    def finished(self):
+        message = '\nCompleted!'
+        md = gtk.MessageDialog(self.wnd_main,
+                               gtk.DIALOG_DESTROY_WITH_PARENT, 
+                               gtk.MESSAGE_INFO,
+                               gtk.BUTTONS_OK,
+                               message)
+        md.set_position(gtk.WIN_POS_CENTER_ALWAYS)
+        md.run()
+        md.destroy()
+
+    def delete_event(self, widget, event, data=None):
+        return False
+
+    def destroy(self, widget, data=None):
+        gtk.main_quit()
+
+    def main(self):
+        gtk.main()
+
+if __name__ == '__main__':
+    TimerApp().main()
