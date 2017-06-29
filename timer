@@ -96,12 +96,13 @@ class TimerApp:
 
     def finished(self):
         message = '\nCompleted!'
-        md = gtk.MessageDialog(self.wnd_main,
+        md = gtk.MessageDialog(None,
                                gtk.DIALOG_DESTROY_WITH_PARENT, 
                                gtk.MESSAGE_INFO,
                                gtk.BUTTONS_OK,
                                message)
         md.set_position(gtk.WIN_POS_CENTER_ALWAYS)
+        md.set_keep_above(True)
         md.run()
         md.destroy()
 
